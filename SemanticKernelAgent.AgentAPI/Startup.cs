@@ -6,7 +6,6 @@ using Azure;
 using Azure.AI.FormRecognizer.DocumentAnalysis;
 using Azure.AI.OpenAI;
 using Azure.Identity;
-using Azure.Search.Documents;
 using Azure.Storage;
 using Azure.Storage.Blobs;
 using Microsoft.AspNetCore.Builder;
@@ -20,7 +19,8 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.SemanticKernel.Connectors.AzureOpenAI;
-using Services;
+
+using SemanticKernelAgent.AgentCore.Services;
 
 namespace Microsoft.BotBuilderSamples
 {
@@ -34,8 +34,6 @@ namespace Microsoft.BotBuilderSamples
                 .AddEnvironmentVariables()
                 .Build();
             services.AddSingleton(configuration);
-
-            services.AddHttpClient<DirectLineService>();
 
             DefaultAzureCredential azureCredentials;
             if (configuration.GetValue<string>("MicrosoftAppType") == "UserAssignedMSI")
@@ -95,15 +93,6 @@ namespace Microsoft.BotBuilderSamples
             }
             if (!configuration.GetValue<string>("DOCINTEL_API_ENDPOINT").IsNullOrEmpty())
                 services.AddSingleton(new DocumentAnalysisClient(new Uri(configuration.GetValue<string>("DOCINTEL_API_ENDPOINT")), new AzureKeyCredential(configuration.GetValue<string>("DOCINTEL_API_KEY"))));
-            if (!configuration.GetValue<string>("SEARCH_API_ENDPOINT").IsNullOrEmpty())
-                if (!configuration.GetValue<string>("SEARCH_API_KEY").IsNullOrEmpty())
-                    services.AddSingleton(new SearchClient(new Uri(configuration.GetValue<string>("SEARCH_API_ENDPOINT")), configuration.GetValue<string>("SEARCH_INDEX"), new AzureKeyCredential(configuration.GetValue<string>("SEARCH_API_KEY"))));
-                else
-                    services.AddSingleton(new SearchClient(new Uri(configuration.GetValue<string>("SEARCH_API_ENDPOINT")), configuration.GetValue<string>("SEARCH_INDEX"), azureCredentials));
-            if (!configuration.GetValue<string>("SQL_CONNECTION_STRING").IsNullOrEmpty())
-                services.AddSingleton(new SqlConnectionFactory(configuration.GetValue<string>("SQL_CONNECTION_STRING")));
-            if (!configuration.GetValue<string>("BING_API_ENDPOINT").IsNullOrEmpty())
-                services.AddSingleton(new BingClient(new System.Net.Http.HttpClient(), new Uri(configuration.GetValue<string>("BING_API_ENDPOINT")), configuration.GetValue<string>("BING_API_KEY")));
             if (!configuration.GetValue<string>("BLOB_API_ENDPOINT").IsNullOrEmpty())
                 if (!configuration.GetValue<string>("BLOB_API_KEY").IsNullOrEmpty())
                     services.AddSingleton(new BlobServiceClient(new Uri(configuration.GetValue<string>("BLOB_API_ENDPOINT")), new StorageSharedKeyCredential(configuration.GetValue<string>("BLOB_API_ENDPOINT").Split('/')[2].Split('.')[0], configuration.GetValue<string>("BLOB_API_KEY"))));

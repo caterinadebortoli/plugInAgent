@@ -13,6 +13,8 @@ using Microsoft.Bot.Connector.Authentication;
 using Microsoft.Bot.Schema;
 using Microsoft.Extensions.Configuration;
 
+using SemanticKernelAgent.AgentTypes.Conversation;
+
 namespace Microsoft.BotBuilderSamples
 {
     public class StateManagementBot<T> : TeamsActivityHandler where T : Dialog

@@ -8,7 +8,6 @@ using System.Threading;
 using System.Threading.Tasks;
 using Azure.AI.FormRecognizer.DocumentAnalysis;
 using Azure.AI.OpenAI;
-using Azure.Search.Documents;
 using Azure.Storage.Blobs;
 using Microsoft.Bot.Builder;
 using Microsoft.Bot.Builder.Dialogs;
@@ -19,8 +18,12 @@ using Microsoft.SemanticKernel;
 using Microsoft.SemanticKernel.Connectors.AzureOpenAI;
 using Microsoft.SemanticKernel.Planning;
 using Microsoft.SemanticKernel.Planning.Handlebars;
-using Plugins;
-using Services;
+
+using SemanticKernelAgent.AgentCore.Plugins;
+using SemanticKernelAgent.AgentCore.Services;
+using SemanticKernelAgent.AgentTypes.Conversation;
+
+
 
 namespace Microsoft.BotBuilderSamples
 {
@@ -29,12 +32,9 @@ namespace Microsoft.BotBuilderSamples
         private Kernel kernel;
         private string _aoaiModel;
         private readonly AzureOpenAIClient _aoaiClient;
-        private readonly BingClient _bingClient;
-        private readonly SearchClient _searchClient;
         private readonly BlobServiceClient _blobServiceClient;
         private readonly AzureOpenAITextEmbeddingGenerationService _embeddingsClient;
         private readonly DocumentAnalysisClient _documentAnalysisClient;
-        private readonly SqlConnectionFactory _sqlConnectionFactory;
         private readonly string _welcomeMessage;
         private readonly List<string> _suggestedQuestions;
         private readonly bool _useStepwisePlanner;
@@ -50,10 +50,7 @@ namespace Microsoft.BotBuilderSamples
             AzureOpenAITextEmbeddingGenerationService embeddingsClient,
             T dialog,
             DocumentAnalysisClient documentAnalysisClient = null,
-            SearchClient searchClient = null,
             BlobServiceClient blobServiceClient = null,
-            BingClient bingClient = null,
-            SqlConnectionFactory sqlConnectionFactory = null,
             GraphClient graphClient = null) :
             base(config, conversationState, userState, embeddingsClient, documentAnalysisClient, dialog)
         {
@@ -64,12 +61,9 @@ namespace Microsoft.BotBuilderSamples
             _useStepwisePlanner = config.GetValue<bool>("USE_STEPWISE_PLANNER");
             _searchSemanticConfig = config.GetValue<string>("SEARCH_SEMANTIC_CONFIG");
             _aoaiClient = aoaiClient;
-            _searchClient = searchClient;
             _blobServiceClient = blobServiceClient;
-            _bingClient = bingClient;
             _embeddingsClient = embeddingsClient;
             _documentAnalysisClient = documentAnalysisClient;
-            _sqlConnectionFactory = sqlConnectionFactory;
             _graphClient = graphClient;
         }
 
@@ -107,12 +101,9 @@ namespace Microsoft.BotBuilderSamples
                     )
                     .Build();
 
-            //if (_sqlConnectionFactory != null) kernel.ImportPluginFromObject(new SQLPlugin(conversationData, turnContext, _sqlConnectionFactory), "SQLPlugin");
             if (_documentAnalysisClient != null) kernel.ImportPluginFromObject(new UploadPlugin(conversationData, turnContext, _embeddingsClient), "UploadPlugin");
-            //if (_searchClient != null) kernel.ImportPluginFromObject(new HRHandbookPlugin(conversationData, turnContext, _embeddingsClient, _searchClient, _blobServiceClient, _searchSemanticConfig), "HRHandbookPlugin");
             kernel.ImportPluginFromObject(new DALLEPlugin(conversationData, turnContext, _aoaiClient), "DALLEPlugin");
             kernel.ImportPluginFromObject(new SharePointListPlugin(conversationData, turnContext, _graphClient), "SharePointPlugin");
-            //if (_bingClient != null) kernel.ImportPluginFromObject(new BingPlugin(conversationData, turnContext, _bingClient), "BingPlugin");
             if (!_useStepwisePlanner) kernel.ImportPluginFromObject(new HumanInterfacePlugin(conversationData, turnContext, _aoaiClient), "HumanInterfacePlugin");
 
             if (_useStepwisePlanner)

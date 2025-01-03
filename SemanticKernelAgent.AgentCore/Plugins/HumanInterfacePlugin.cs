@@ -1,14 +1,16 @@
 using System.ComponentModel;
 using System.Threading.Tasks;
 using Microsoft.SemanticKernel;
-using Microsoft.BotBuilderSamples;
 using Microsoft.Bot.Builder;
 using Microsoft.Bot.Schema;
 using Azure.AI.OpenAI;
 using OpenAI.Chat;
 using System.Collections.Generic;
 
-namespace Plugins;
+using SemanticKernelAgent.AgentCore.Services;
+using SemanticKernelAgent.AgentTypes.Conversation;
+
+namespace SemanticKernelAgent.AgentCore.Plugins;
 public class HumanInterfacePlugin
 {
     private readonly AzureOpenAIClient _aoaiClient;

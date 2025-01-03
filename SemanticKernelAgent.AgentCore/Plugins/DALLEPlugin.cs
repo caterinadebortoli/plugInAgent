@@ -4,7 +4,6 @@ using Azure;
 using Azure.AI.OpenAI;
 using OpenAI;
 using Microsoft.SemanticKernel;
-using Microsoft.BotBuilderSamples;
 using Microsoft.Bot.Builder;
 using Microsoft.Bot.Schema;
 using System.Collections.Generic;
@@ -12,7 +11,10 @@ using OpenAI.Images;
 using System.Drawing;
 using AdaptiveCards.Rendering;
 
-namespace Plugins;
+using SemanticKernelAgent.AgentCore.Services;
+using SemanticKernelAgent.AgentTypes.Conversation;
+
+namespace SemanticKernelAgent.AgentCore.Plugins;
 public class DALLEPlugin
 {
     private readonly AzureOpenAIClient _aoaiClient;
