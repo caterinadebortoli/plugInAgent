@@ -70,6 +70,10 @@ namespace Microsoft.BotBuilderSamples
                 storage = new MemoryStorage();
             }
 
+            // Add Graph Client Service Singleton
+
+            services.AddSingleton<GraphClient>();
+
 
             // Create the User state passing in the storage layer.
             var userState = new UserState(storage);
