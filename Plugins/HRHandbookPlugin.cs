@@ -9,7 +9,7 @@ using Microsoft.Bot.Schema;
 using Azure.Search.Documents;
 using System;
 using Azure.Search.Documents.Models;
-using Microsoft.SemanticKernel.Connectors.OpenAI;
+using Microsoft.SemanticKernel.Connectors.AzureOpenAI;
 using System.Collections.Generic;
 using Microsoft.IdentityModel.Tokens;
 using Azure.Storage.Blobs;

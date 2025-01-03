@@ -1,20 +1,24 @@
 using System.ComponentModel;
 using System.Threading.Tasks;
 using Azure;
+using Azure.AI.OpenAI;
+using OpenAI;
 using Microsoft.SemanticKernel;
 using Microsoft.BotBuilderSamples;
 using Microsoft.Bot.Builder;
 using Microsoft.Bot.Schema;
-using Azure.AI.OpenAI;
 using System.Collections.Generic;
+using OpenAI.Images;
+using System.Drawing;
+using AdaptiveCards.Rendering;
 
 namespace Plugins;
 public class DALLEPlugin
 {
-    private readonly OpenAIClient _aoaiClient;
+    private readonly AzureOpenAIClient _aoaiClient;
     private ITurnContext<IMessageActivity> _turnContext;
 
-    public DALLEPlugin(ConversationData conversationData, ITurnContext<IMessageActivity> turnContext, OpenAIClient aoaiClient)
+    public DALLEPlugin(ConversationData conversationData, ITurnContext<IMessageActivity> turnContext, AzureOpenAIClient aoaiClient)
     {
         _aoaiClient = aoaiClient;
         _turnContext = turnContext;
@@ -29,14 +33,12 @@ public class DALLEPlugin
     )
     {
         await _turnContext.SendActivityAsync($"Generating {n} images with the description \"{prompt}\"...");
-        Response<ImageGenerations> imageGenerations = await _aoaiClient.GetImageGenerationsAsync(
+        var imgGen = await _aoaiClient.GetImageClient("Dalle3").GenerateImagesAsync(prompt, n,
             new ImageGenerationOptions()
             {
-                Prompt = prompt,
-                Size = ImageSize.Size1024x1024,
-                ImageCount = n,
-                DeploymentName= "Dalle3"
+                Size = GeneratedImageSize.W1024xH1792,
             });
+
 
         List<object> images = new();
         images.Add(
@@ -46,8 +48,8 @@ public class DALLEPlugin
                 size="large"
             }
         );
-        foreach (ImageGenerationData img in imageGenerations.Value.Data)
-            images.Add(new { type = "Image", url = img.Url.AbsoluteUri });
+        foreach (OpenAI.Images.GeneratedImage img in imgGen.Value)
+            images.Add(new { type = "Image", url = img.ImageUri.AbsoluteUri });
         object adaptiveCardJson = new
         {
             type = "AdaptiveCard",

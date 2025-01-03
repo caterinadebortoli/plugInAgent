@@ -19,8 +19,7 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.IdentityModel.Tokens;
-using Microsoft.SemanticKernel.Connectors.OpenAI;
-using Microsoft.WindowsAzure.Storage.Auth;
+using Microsoft.SemanticKernel.Connectors.AzureOpenAI;
 using Services;
 
 namespace Microsoft.BotBuilderSamples
@@ -82,12 +81,12 @@ namespace Microsoft.BotBuilderSamples
 
             if (!configuration.GetValue<string>("AOAI_API_KEY").IsNullOrEmpty())
             {
-                services.AddSingleton(new OpenAIClient(new Uri(configuration.GetValue<string>("AOAI_API_ENDPOINT")), new AzureKeyCredential(configuration.GetValue<string>("AOAI_API_KEY"))));
+                services.AddSingleton(new AzureOpenAIClient(new Uri(configuration.GetValue<string>("AOAI_API_ENDPOINT")), new AzureKeyCredential(configuration.GetValue<string>("AOAI_API_KEY"))));
                 services.AddSingleton(new AzureOpenAITextEmbeddingGenerationService(configuration.GetValue<string>("AOAI_EMBEDDINGS_MODEL"), configuration.GetValue<string>("AOAI_API_ENDPOINT"), configuration.GetValue<string>("AOAI_API_KEY")));
             }
             else
             {
-                services.AddSingleton(new OpenAIClient(new Uri(configuration.GetValue<string>("AOAI_API_ENDPOINT")), azureCredentials));
+                services.AddSingleton(new AzureOpenAIClient(new Uri(configuration.GetValue<string>("AOAI_API_ENDPOINT")), azureCredentials));
                 services.AddSingleton(new AzureOpenAITextEmbeddingGenerationService(configuration.GetValue<string>("AOAI_EMBEDDINGS_MODEL"), configuration.GetValue<string>("AOAI_API_ENDPOINT"), azureCredentials));
             }
             if (!configuration.GetValue<string>("DOCINTEL_API_ENDPOINT").IsNullOrEmpty())

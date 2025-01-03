@@ -16,7 +16,7 @@ using Microsoft.Bot.Schema;
 using Microsoft.Extensions.Configuration;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.SemanticKernel;
-using Microsoft.SemanticKernel.Connectors.OpenAI;
+using Microsoft.SemanticKernel.Connectors.AzureOpenAI;
 using Microsoft.SemanticKernel.Planning;
 using Microsoft.SemanticKernel.Planning.Handlebars;
 using Plugins;
@@ -28,7 +28,7 @@ namespace Microsoft.BotBuilderSamples
     {
         private Kernel kernel;
         private string _aoaiModel;
-        private readonly OpenAIClient _aoaiClient;
+        private readonly AzureOpenAIClient _aoaiClient;
         private readonly BingClient _bingClient;
         private readonly SearchClient _searchClient;
         private readonly BlobServiceClient _blobServiceClient;
@@ -44,7 +44,7 @@ namespace Microsoft.BotBuilderSamples
             IConfiguration config,
             ConversationState conversationState,
             UserState userState,
-            OpenAIClient aoaiClient,
+            AzureOpenAIClient aoaiClient,
             AzureOpenAITextEmbeddingGenerationService embeddingsClient,
             T dialog,
             DocumentAnalysisClient documentAnalysisClient = null,
@@ -113,7 +113,7 @@ namespace Microsoft.BotBuilderSamples
 
             if (_useStepwisePlanner)
             {
-                var plannerOptions = new FunctionCallingStepwisePlannerConfig
+                var plannerOptions = new FunctionCallingStepwisePlannerOptions
                 {
                     MaxTokens = 128000,
                 };
@@ -128,7 +128,7 @@ namespace Microsoft.BotBuilderSamples
             {
                 var plannerOptions = new HandlebarsPlannerOptions
                 {
-                    MaxTokens = 128000,
+
                 };
 
                 var planner = new HandlebarsPlanner(plannerOptions);

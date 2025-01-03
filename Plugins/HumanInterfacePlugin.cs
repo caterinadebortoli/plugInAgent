@@ -5,15 +5,16 @@ using Microsoft.BotBuilderSamples;
 using Microsoft.Bot.Builder;
 using Microsoft.Bot.Schema;
 using Azure.AI.OpenAI;
+using OpenAI.Chat;
 using System.Collections.Generic;
 
 namespace Plugins;
 public class HumanInterfacePlugin
 {
-    private readonly OpenAIClient _aoaiClient;
+    private readonly AzureOpenAIClient _aoaiClient;
     private ITurnContext<IMessageActivity> _turnContext;
 
-    public HumanInterfacePlugin(ConversationData conversationData, ITurnContext<IMessageActivity> turnContext, OpenAIClient aoaiClient)
+    public HumanInterfacePlugin(ConversationData conversationData, ITurnContext<IMessageActivity> turnContext, AzureOpenAIClient aoaiClient)
     {
         _aoaiClient = aoaiClient;
         _turnContext = turnContext;
@@ -27,15 +28,22 @@ public class HumanInterfacePlugin
         [Description("User's goal")] string goal
     )
     {
+
         await _turnContext.SendActivityAsync($"Generating final answer...");
-        var completionsOptions = new ChatCompletionsOptions("gpt-4", new List<ChatRequestMessage>{
-            new ChatRequestSystemMessage(@$"The information below was obtained by connecting to external systems. Please use it to formulate a response to the user.
+        var completionsOptions = new ChatCompletionOptions()
+        {
+            MaxOutputTokenCount = 12000,
+        };
+
+        List<ChatMessage> messages = new List<ChatMessage>();
+        messages.Add(new SystemChatMessage(@$"The information below was obtained by connecting to external systems. Please use it to formulate a response to the user.
                 [PLAN RESULTS]:
-                {planResults}"),
-            new ChatRequestUserMessage(goal)
-        });
-        var completions = await _aoaiClient.GetChatCompletionsAsync(completionsOptions);
-        return completions.Value.Choices[0].Message.Content;
+                {planResults}"));
+        messages.Add(new UserChatMessage(goal));
+
+
+        var completions = await _aoaiClient.GetChatClient("gpt-4").CompleteChatAsync(messages, completionsOptions);
+        return completions.Value.Content.ToString();
     }
 
 
