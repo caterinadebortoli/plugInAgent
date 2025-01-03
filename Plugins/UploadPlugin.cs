@@ -5,8 +5,8 @@ using System.Collections.Generic;
 using Microsoft.BotBuilderSamples;
 using Microsoft.Bot.Builder;
 using Microsoft.Bot.Schema;
-using Microsoft.SemanticKernel.Connectors.OpenAI;
 using Microsoft.SemanticKernel;
+using Microsoft.SemanticKernel.Connectors.AzureOpenAI;
 
 namespace Plugins;
 

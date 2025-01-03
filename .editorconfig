@@ -1,4 +1,5 @@
 [*.cs]
+dotnet_diagnostic.SKEXP0010.severity = none
 dotnet_diagnostic.SKEXP0011.severity = none
 dotnet_diagnostic.SKEXP0012.severity = none
 dotnet_diagnostic.SKEXP0060.severity = none
