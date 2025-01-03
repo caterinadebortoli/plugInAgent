@@ -40,6 +40,8 @@ namespace Microsoft.BotBuilderSamples
         private readonly bool _useStepwisePlanner;
         private readonly string _searchSemanticConfig;
 
+        private readonly GraphClient _graphClient;
+
         public SemanticKernelBot(
             IConfiguration config,
             ConversationState conversationState,
@@ -51,7 +53,8 @@ namespace Microsoft.BotBuilderSamples
             SearchClient searchClient = null,
             BlobServiceClient blobServiceClient = null,
             BingClient bingClient = null,
-            SqlConnectionFactory sqlConnectionFactory = null) :
+            SqlConnectionFactory sqlConnectionFactory = null,
+            GraphClient graphClient = null) :
             base(config, conversationState, userState, embeddingsClient, documentAnalysisClient, dialog)
         {
             _aoaiModel = config.GetValue<string>("AOAI_GPT_MODEL");
@@ -67,6 +70,7 @@ namespace Microsoft.BotBuilderSamples
             _embeddingsClient = embeddingsClient;
             _documentAnalysisClient = documentAnalysisClient;
             _sqlConnectionFactory = sqlConnectionFactory;
+            _graphClient = graphClient;
         }
 
         protected override async Task OnMembersAddedAsync(IList<ChannelAccount> membersAdded, ITurnContext<IConversationUpdateActivity> turnContext, CancellationToken cancellationToken)
@@ -107,7 +111,7 @@ namespace Microsoft.BotBuilderSamples
             if (_documentAnalysisClient != null) kernel.ImportPluginFromObject(new UploadPlugin(conversationData, turnContext, _embeddingsClient), "UploadPlugin");
             //if (_searchClient != null) kernel.ImportPluginFromObject(new HRHandbookPlugin(conversationData, turnContext, _embeddingsClient, _searchClient, _blobServiceClient, _searchSemanticConfig), "HRHandbookPlugin");
             kernel.ImportPluginFromObject(new DALLEPlugin(conversationData, turnContext, _aoaiClient), "DALLEPlugin");
-            kernel.ImportPluginFromObject(new SharePointListPlugin(conversationData, turnContext), "SharePointPlugin");
+            kernel.ImportPluginFromObject(new SharePointListPlugin(conversationData, turnContext, _graphClient), "SharePointPlugin");
             //if (_bingClient != null) kernel.ImportPluginFromObject(new BingPlugin(conversationData, turnContext, _bingClient), "BingPlugin");
             if (!_useStepwisePlanner) kernel.ImportPluginFromObject(new HumanInterfacePlugin(conversationData, turnContext, _aoaiClient), "HumanInterfacePlugin");
 
