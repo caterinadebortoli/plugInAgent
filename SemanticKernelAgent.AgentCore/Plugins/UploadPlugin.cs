@@ -2,14 +2,15 @@ using System.ComponentModel;
 using System.Threading.Tasks;
 using System.Linq;
 using System.Collections.Generic;
-using Microsoft.BotBuilderSamples;
 using Microsoft.Bot.Builder;
 using Microsoft.Bot.Schema;
 using Microsoft.SemanticKernel;
 using Microsoft.SemanticKernel.Connectors.AzureOpenAI;
 
-namespace Plugins;
+using SemanticKernelAgent.AgentCore.Services;
+using SemanticKernelAgent.AgentTypes.Conversation;
 
+namespace SemanticKernelAgent.AgentCore.Plugins;
 public class UploadPlugin
 {
     private readonly AzureOpenAITextEmbeddingGenerationService _embeddingClient;

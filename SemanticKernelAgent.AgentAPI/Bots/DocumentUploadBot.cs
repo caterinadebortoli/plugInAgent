@@ -16,6 +16,8 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.SemanticKernel.Connectors.AzureOpenAI;
 
+using SemanticKernelAgent.AgentTypes.Conversation;
+
 
 namespace Microsoft.BotBuilderSamples
 {
@@ -63,8 +65,8 @@ namespace Microsoft.BotBuilderSamples
 
             AnalyzeResult result = operation.Value;
 
-            var attachment = new Attachment();
-            attachment.Name = pdfAttachment.Name;
+            var attachment = new SemanticKernelAgent.AgentTypes.Conversation.Attachment();
+            attachment.Name = pdfAttachment.Name;   
             foreach (DocumentPage page in result.Pages)
             {
                 var attachmentPage = new AttachmentPage();
