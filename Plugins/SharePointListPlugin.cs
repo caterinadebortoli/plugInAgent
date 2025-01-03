@@ -15,7 +15,6 @@ using Microsoft.Extensions.Configuration;
 using System.Configuration;
 using Services;
 using Azure;
-using Json.More;
 
 namespace Plugins;
 public class SharePointListPlugin
