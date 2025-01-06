@@ -29,11 +29,7 @@ namespace Microsoft.BotBuilderSamples
 {
     public class SemanticKernelBot<T> : DocumentUploadBot<T> where T : Dialog
     {
-        private Kernel kernel;
-        private string _aoaiModel;
-        private readonly AzureOpenAIClient _aoaiClient;
-        private readonly BlobServiceClient _blobServiceClient;
-        private readonly AzureOpenAITextEmbeddingGenerationService _embeddingsClient;
+        private readonly Kernel _kernel;
         private readonly DocumentAnalysisClient _documentAnalysisClient;
         private readonly string _welcomeMessage;
         private readonly List<string> _suggestedQuestions;
@@ -46,25 +42,22 @@ namespace Microsoft.BotBuilderSamples
             IConfiguration config,
             ConversationState conversationState,
             UserState userState,
-            AzureOpenAIClient aoaiClient,
-            AzureOpenAITextEmbeddingGenerationService embeddingsClient,
+            Kernel kernel,
             T dialog,
             DocumentAnalysisClient documentAnalysisClient = null,
             BlobServiceClient blobServiceClient = null,
             GraphClient graphClient = null) :
-            base(config, conversationState, userState, embeddingsClient, documentAnalysisClient, dialog)
+            base(config, conversationState, userState, kernel, documentAnalysisClient, dialog)
         {
-            _aoaiModel = config.GetValue<string>("AOAI_GPT_MODEL");
             _welcomeMessage = config.GetValue<string>("PROMPT_WELCOME_MESSAGE");
             _systemMessage = config.GetValue<string>("PROMPT_SYSTEM_MESSAGE");
             _suggestedQuestions = System.Text.Json.JsonSerializer.Deserialize<List<string>>(config.GetValue<string>("PROMPT_SUGGESTED_QUESTIONS"));
             _useStepwisePlanner = config.GetValue<bool>("USE_STEPWISE_PLANNER");
             _searchSemanticConfig = config.GetValue<string>("SEARCH_SEMANTIC_CONFIG");
-            _aoaiClient = aoaiClient;
-            _blobServiceClient = blobServiceClient;
-            _embeddingsClient = embeddingsClient;
             _documentAnalysisClient = documentAnalysisClient;
             _graphClient = graphClient;
+            _kernel = kernel;
+
         }
 
         protected override async Task OnMembersAddedAsync(IList<ChannelAccount> membersAdded, ITurnContext<IConversationUpdateActivity> turnContext, CancellationToken cancellationToken)
@@ -91,21 +84,7 @@ namespace Microsoft.BotBuilderSamples
             if (turnContext.Activity.Text.IsNullOrEmpty())
                 return "";
 
-            kernel = Kernel.CreateBuilder()
-                    .AddAzureOpenAIChatCompletion(
-                        deploymentName: _aoaiModel,
-                        _aoaiClient
-                    )
-                    .AddAzureOpenAITextToImage(
-                        "dall-e-3", "https://az-openai-pb.openai.azure.com/", "30a9c71623584c13831ab28b163b074a"
-                    )
-                    .Build();
-
-            if (_documentAnalysisClient != null) kernel.ImportPluginFromObject(new UploadPlugin(conversationData, turnContext, _embeddingsClient), "UploadPlugin");
-            kernel.ImportPluginFromObject(new DALLEPlugin(conversationData, turnContext, _aoaiClient), "DALLEPlugin");
-            kernel.ImportPluginFromObject(new SharePointListPlugin(conversationData, turnContext, _graphClient), "SharePointPlugin");
-            if (!_useStepwisePlanner) kernel.ImportPluginFromObject(new HumanInterfacePlugin(conversationData, turnContext, _aoaiClient), "HumanInterfacePlugin");
-
+            RegisterPlugins(conversationData, turnContext);
             if (_useStepwisePlanner)
             {
                 var plannerOptions = new FunctionCallingStepwisePlannerOptions
@@ -115,7 +94,7 @@ namespace Microsoft.BotBuilderSamples
 
                 var planner = new FunctionCallingStepwisePlanner(plannerOptions);
                 string prompt = FormatConversationHistory(conversationData);
-                var result = await planner.ExecuteAsync(kernel, prompt);
+                var result = await planner.ExecuteAsync(_kernel, prompt);
 
                 return result.FinalAnswer;
             }
@@ -128,11 +107,18 @@ namespace Microsoft.BotBuilderSamples
 
                 var planner = new HandlebarsPlanner(plannerOptions);
                 string prompt = FormatConversationHistory(conversationData);
-                var plan = await planner.CreatePlanAsync(kernel, prompt);
-                var result = await plan.InvokeAsync(kernel, default);
+                var plan = await planner.CreatePlanAsync(_kernel, prompt);
+                var result = await plan.InvokeAsync(_kernel, default);
                 return result;
             }
         }
-    }
 
+        private void RegisterPlugins(ConversationData conversationData, ITurnContext<IMessageActivity> turnContext)
+        {
+            if (_documentAnalysisClient != null && !_kernel.Plugins.Select(x => x.Name).Contains("UploadPlugin")) _kernel.ImportPluginFromObject(new UploadPlugin(conversationData, turnContext, _kernel), "UploadPlugin");
+            if (!_kernel.Plugins.Select(x => x.Name).Contains("DALLEPlugin")) _kernel.ImportPluginFromObject(new DALLEPlugin(conversationData, turnContext, _kernel), "DALLEPlugin");
+            if (!_kernel.Plugins.Select(x => x.Name).Contains("SharePointPlugin")) _kernel.ImportPluginFromObject(new SharePointListPlugin(conversationData, turnContext, _graphClient), "SharePointPlugin");
+            if (!_useStepwisePlanner && !_kernel.Plugins.Select(x => x.Name).Contains("HumanInterfacePlugin")) _kernel.ImportPluginFromObject(new HumanInterfacePlugin(conversationData, turnContext, _kernel), "HumanInterfacePlugin");
+        }
+    }
 }

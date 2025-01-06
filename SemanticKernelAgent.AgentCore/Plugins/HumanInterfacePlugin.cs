@@ -1,6 +1,7 @@
 using System.ComponentModel;
 using System.Threading.Tasks;
 using Microsoft.SemanticKernel;
+using Microsoft.SemanticKernel.ChatCompletion;
 using Microsoft.Bot.Builder;
 using Microsoft.Bot.Schema;
 using Azure.AI.OpenAI;
@@ -9,17 +10,19 @@ using System.Collections.Generic;
 
 using SemanticKernelAgent.AgentCore.Services;
 using SemanticKernelAgent.AgentTypes.Conversation;
+using Microsoft.SemanticKernel.Connectors.AzureOpenAI;
+using Microsoft.Graph.Models;
 
 namespace SemanticKernelAgent.AgentCore.Plugins;
 public class HumanInterfacePlugin
 {
-    private readonly AzureOpenAIClient _aoaiClient;
+    private readonly Kernel _kernel;
     private ITurnContext<IMessageActivity> _turnContext;
 
-    public HumanInterfacePlugin(ConversationData conversationData, ITurnContext<IMessageActivity> turnContext, AzureOpenAIClient aoaiClient)
+    public HumanInterfacePlugin(ConversationData conversationData, ITurnContext<IMessageActivity> turnContext, Kernel kernel)
     {
-        _aoaiClient = aoaiClient;
         _turnContext = turnContext;
+        _kernel = kernel;
     }
 
 
@@ -32,20 +35,21 @@ public class HumanInterfacePlugin
     {
 
         await _turnContext.SendActivityAsync($"Generating final answer...");
-        var completionsOptions = new ChatCompletionOptions()
+        var completionsOptions = new AzureOpenAIPromptExecutionSettings()
         {
-            MaxOutputTokenCount = 12000,
+            MaxTokens = 12000,
         };
 
-        List<ChatMessage> messages = new List<ChatMessage>();
-        messages.Add(new SystemChatMessage(@$"The information below was obtained by connecting to external systems. Please use it to formulate a response to the user.
+        var chatHistory = new ChatHistory();
+        chatHistory.AddMessage(AuthorRole.System, @$"The information below was obtained by connecting to external systems. Please use it to formulate a response to the user.
                 [PLAN RESULTS]:
-                {planResults}"));
-        messages.Add(new UserChatMessage(goal));
+                {planResults}");
+        chatHistory.AddMessage(AuthorRole.User, goal);
 
 
-        var completions = await _aoaiClient.GetChatClient("gpt-4").CompleteChatAsync(messages, completionsOptions);
-        return completions.Value.Content.ToString();
+        var completions = await _kernel.GetRequiredService<IChatCompletionService>().GetChatMessageContentAsync(chatHistory, completionsOptions);
+
+        return completions.Content;
     }
 
 

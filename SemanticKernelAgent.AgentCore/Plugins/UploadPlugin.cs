@@ -5,23 +5,25 @@ using System.Collections.Generic;
 using Microsoft.Bot.Builder;
 using Microsoft.Bot.Schema;
 using Microsoft.SemanticKernel;
+using Microsoft.SemanticKernel.Embeddings;
 using Microsoft.SemanticKernel.Connectors.AzureOpenAI;
 
 using SemanticKernelAgent.AgentCore.Services;
 using SemanticKernelAgent.AgentTypes.Conversation;
+using Microsoft.SemanticKernel.Embeddings;
 
 namespace SemanticKernelAgent.AgentCore.Plugins;
 public class UploadPlugin
 {
-    private readonly AzureOpenAITextEmbeddingGenerationService _embeddingClient;
+    private readonly Kernel _kernel;
     private ConversationData _conversationData;
     private ITurnContext<IMessageActivity> _turnContext;
 
-    public UploadPlugin(ConversationData conversationData, ITurnContext<IMessageActivity> turnContext, AzureOpenAITextEmbeddingGenerationService embeddingClient)
+    public UploadPlugin(ConversationData conversationData, ITurnContext<IMessageActivity> turnContext, Kernel kernel)
     {
-        _embeddingClient = embeddingClient;
         _conversationData = conversationData;
         _turnContext = turnContext;
+        _kernel = kernel;
     }
 
 
@@ -32,7 +34,8 @@ public class UploadPlugin
     )
     {
         await _turnContext.SendActivityAsync($"Searching document {docName} for \"{query}\"...");
-        var embedding = await _embeddingClient.GenerateEmbeddingsAsync(new List<string> { query });
+        var embedding = await _kernel.GetRequiredService<ITextEmbeddingGenerationService>().GenerateEmbeddingsAsync(new List<string> { query });
+        //var embedding = await _embeddingClient.GenerateEmbeddingsAsync(new List<string> { query });
         var vector = embedding.First().ToArray();
         var similarities = new List<float>();
         var attachment = _conversationData.Attachments.Find(x => x.Name == docName);

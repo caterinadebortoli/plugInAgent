@@ -18,8 +18,9 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.IdentityModel.Tokens;
+using Microsoft.SemanticKernel;
 using Microsoft.SemanticKernel.Connectors.AzureOpenAI;
-
+using SemanticKernelAgent.AgentCore.Plugins;
 using SemanticKernelAgent.AgentCore.Services;
 
 namespace Microsoft.BotBuilderSamples
@@ -81,16 +82,6 @@ namespace Microsoft.BotBuilderSamples
             var conversationState = new ConversationState(storage);
             services.AddSingleton(conversationState);
 
-            if (!configuration.GetValue<string>("AOAI_API_KEY").IsNullOrEmpty())
-            {
-                services.AddSingleton(new AzureOpenAIClient(new Uri(configuration.GetValue<string>("AOAI_API_ENDPOINT")), new AzureKeyCredential(configuration.GetValue<string>("AOAI_API_KEY"))));
-                services.AddSingleton(new AzureOpenAITextEmbeddingGenerationService(configuration.GetValue<string>("AOAI_EMBEDDINGS_MODEL"), configuration.GetValue<string>("AOAI_API_ENDPOINT"), configuration.GetValue<string>("AOAI_API_KEY")));
-            }
-            else
-            {
-                services.AddSingleton(new AzureOpenAIClient(new Uri(configuration.GetValue<string>("AOAI_API_ENDPOINT")), azureCredentials));
-                services.AddSingleton(new AzureOpenAITextEmbeddingGenerationService(configuration.GetValue<string>("AOAI_EMBEDDINGS_MODEL"), configuration.GetValue<string>("AOAI_API_ENDPOINT"), azureCredentials));
-            }
             if (!configuration.GetValue<string>("DOCINTEL_API_ENDPOINT").IsNullOrEmpty())
                 services.AddSingleton(new DocumentAnalysisClient(new Uri(configuration.GetValue<string>("DOCINTEL_API_ENDPOINT")), new AzureKeyCredential(configuration.GetValue<string>("DOCINTEL_API_KEY"))));
             if (!configuration.GetValue<string>("BLOB_API_ENDPOINT").IsNullOrEmpty())
@@ -104,6 +95,28 @@ namespace Microsoft.BotBuilderSamples
             // services.AddSingleton<LoginDialog>();
             services.AddSingleton<LoginDialog>();
             services.AddTransient<IBot, SemanticKernelBot<LoginDialog>>();
+
+            services.AddSingleton<Kernel>(services => {
+                var kernel = Kernel.CreateBuilder()
+                    .AddAzureOpenAIChatCompletion(
+                        deploymentName: configuration.GetValue<string>("AOAI_GPT_MODEL"),
+                        endpoint: configuration.GetValue<string>("AOAI_API_ENDPOINT"),
+                        apiKey: configuration.GetValue<string>("AOAI_API_KEY")
+                    )
+                    //model name can be rmoved after appsettings is distributed
+                    .AddAzureOpenAITextToImage(
+                        configuration.GetValue<string>("AOAI_IMAGE_MODEL") ?? "Dalle3", 
+                        configuration.GetValue<string>("AOAI_API_ENDPOINT"), 
+                        configuration.GetValue<string>("AOAI_API_KEY")
+                    )
+                    .AddAzureOpenAITextEmbeddingGeneration(
+                        configuration.GetValue<string>("AOAI_EMBEDDINGS_MODEL"), 
+                        configuration.GetValue<string>("AOAI_API_ENDPOINT"), 
+                        configuration.GetValue<string>("AOAI_API_KEY")
+                    )
+                    .Build();
+                return kernel;
+            });
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
