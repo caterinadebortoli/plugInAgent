@@ -38,6 +38,9 @@ namespace Microsoft.BotBuilderSamples
 
         private readonly GraphClient _graphClient;
 
+        private readonly string _workspaceId;
+       
+
         public SemanticKernelBot(
             IConfiguration config,
             ConversationState conversationState,
@@ -56,6 +59,7 @@ namespace Microsoft.BotBuilderSamples
             _searchSemanticConfig = config.GetValue<string>("SEARCH_SEMANTIC_CONFIG");
             _documentAnalysisClient = documentAnalysisClient;
             _graphClient = graphClient;
+            _workspaceId=config.GetValue<string>("WORKSPACE_ID");
             _kernel = kernel;
 
         }
@@ -117,6 +121,7 @@ namespace Microsoft.BotBuilderSamples
         {
             if (_documentAnalysisClient != null && !_kernel.Plugins.Select(x => x.Name).Contains("UploadPlugin")) _kernel.ImportPluginFromObject(new UploadPlugin(conversationData, turnContext, _kernel), "UploadPlugin");
             if (!_kernel.Plugins.Select(x => x.Name).Contains("DALLEPlugin")) _kernel.ImportPluginFromObject(new DALLEPlugin(conversationData, turnContext, _kernel), "DALLEPlugin");
+            if (!_kernel.Plugins.Select(x=>x.Name).Contains("AppInsightsPlugin")) _kernel.ImportPluginFromObject(new AppInsightsPlugin(conversationData,turnContext,_kernel, _workspaceId), "AppInsightsPlugin");
             if (!_kernel.Plugins.Select(x => x.Name).Contains("SharePointPlugin")) _kernel.ImportPluginFromObject(new SharePointListPlugin(conversationData, turnContext, _graphClient), "SharePointPlugin");
             if (!_useStepwisePlanner && !_kernel.Plugins.Select(x => x.Name).Contains("HumanInterfacePlugin")) _kernel.ImportPluginFromObject(new HumanInterfacePlugin(conversationData, turnContext, _kernel), "HumanInterfacePlugin");
         }

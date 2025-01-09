@@ -17,6 +17,7 @@ using Microsoft.Bot.Connector.Authentication;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.Logging;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.SemanticKernel;
 using Microsoft.SemanticKernel.Connectors.AzureOpenAI;
@@ -35,6 +36,7 @@ namespace Microsoft.BotBuilderSamples
                 .AddEnvironmentVariables()
                 .Build();
             services.AddSingleton(configuration);
+            
 
             DefaultAzureCredential azureCredentials;
             if (configuration.GetValue<string>("MicrosoftAppType") == "UserAssignedMSI")
