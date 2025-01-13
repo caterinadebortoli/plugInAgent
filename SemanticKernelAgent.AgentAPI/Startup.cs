@@ -23,6 +23,9 @@ using Microsoft.SemanticKernel;
 using Microsoft.SemanticKernel.Connectors.AzureOpenAI;
 using SemanticKernelAgent.AgentCore.Plugins;
 using SemanticKernelAgent.AgentCore.Services;
+using OpenTelemetry.Logs;
+using OpenTelemetry.Metrics;
+using OpenTelemetry.Trace;
 
 namespace Microsoft.BotBuilderSamples
 {
@@ -31,12 +34,16 @@ namespace Microsoft.BotBuilderSamples
         // This method gets called by the runtime. Use this method to add services to the container.
         public void ConfigureServices(IServiceCollection services)
         {
+            
             var configuration = new ConfigurationBuilder()
                 .AddJsonFile("appsettings.json", optional: true)
                 .AddEnvironmentVariables()
                 .Build();
             services.AddSingleton(configuration);
+            var aiOptions= new ApplicationInsights.AspNetCore.Extensions.ApplicationInsightsServiceOptions();
             
+            services.AddApplicationInsightsTelemetry(aiOptions);
+
 
             DefaultAzureCredential azureCredentials;
             if (configuration.GetValue<string>("MicrosoftAppType") == "UserAssignedMSI")
@@ -71,11 +78,18 @@ namespace Microsoft.BotBuilderSamples
                 storage = new MemoryStorage();
             }
 
+
+          
+
             // Add Graph Client Service Singleton
 
             services.AddSingleton<GraphClient>();
 
+            // Add App Insights Client Service Singleton
+            services.AddSingleton<AppInsightsClient>();
 
+            services.AddSingleton<Neo4jGraphClient>();
+            
             // Create the User state passing in the storage layer.
             var userState = new UserState(storage);
             services.AddSingleton(userState);
