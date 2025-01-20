@@ -23,8 +23,7 @@
     <PackageReference Include="Microsoft.SemanticKernel" Version="1.32.0" />
     <PackageReference Include="Microsoft.SemanticKernel.Planners.Handlebars" Version="1.32.0-preview" />
     <PackageReference Include="Microsoft.SemanticKernel.Planners.OpenAI" Version="1.32.0-preview" />
-    <PackageReference Include="Neo4j.Driver" Version="5.27.0" />
-    <PackageReference Include="Neo4j.KernelMemory.MemoryStorage" Version="0.1.0" />
+    <PackageReference Include="Swashbuckle.AspNetCore" Version="7.2.0" />
   </ItemGroup>
 
   <PropertyGroup>

@@ -13,6 +13,7 @@ using SemanticKernelAgent.AgentTypes.Conversation;
 using Microsoft.SemanticKernel.Connectors.AzureOpenAI;
 using Microsoft.Graph.Models;
 
+
 namespace SemanticKernelAgent.AgentCore.Plugins;
 public class HumanInterfacePlugin
 {

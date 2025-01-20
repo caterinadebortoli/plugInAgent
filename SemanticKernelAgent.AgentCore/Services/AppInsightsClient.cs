@@ -4,16 +4,26 @@ using Azure.Monitor.Query;
 using Azure.Monitor.Query.Models;
 using System;
 using Azure;
-
+using System.Drawing;
+using SemanticKernelAgent.AgentTypes.AppInsights;
 namespace SemanticKernelAgent.AgentCore.Services;
 
 public class AppInsightsClient
 {
     private readonly string _workspaceId;
+    private readonly string _tenantId;
+    private readonly string _clientId;
+    private readonly string _clientSecret;
+
+
 
     public AppInsightsClient(IConfiguration configuration)
     {
         _workspaceId = configuration.GetValue<string>("WORKSPACE_ID");
+        _tenantId = configuration.GetValue<string>("MicrosoftAppTenantId");
+        _clientId = configuration.GetValue<string>("ClientAppId");
+        _clientSecret=configuration.GetValue<string>("ClientSecret");
+   
 
     }
     public async Task<string> CreateQuery(string tableName, int? TopNItems, bool HasSeverityLevel, int? SeverityLevel)
@@ -32,13 +42,23 @@ public class AppInsightsClient
         }
     }
 
-    public async Task<Object> ExecuteQuery(string query)
+    public async Task<AppInsightsResult> ExecuteQuery(string query)
         {
-        var credential= new AzureCliCredential();
         
-        var client = new LogsQueryClient(credential);
+                var options = new ClientSecretCredentialOptions
+        {
+            AuthorityHost = AzureAuthorityHosts.AzurePublicCloud,
+        };
+    
+        // https://learn.microsoft.com/dotnet/api/azure.identity.clientsecretcredential
+        var clientSecretCredential = new ClientSecretCredential(_tenantId, _clientId, _clientSecret,options);
+
+        //_graphClient = new GraphServiceClient(clientSecretCredential, scopes);
+        //ClientSecretCredential credential = new ClientSecretCredential(_tenantId,_clientId,_clientSecret);
         
-        List<string> values = new List<string>();
+        AppInsightsResult appInsightsResult = new AppInsightsResult();
+        appInsightsResult.ResponseMessages = new List<string>();
+        var client = new LogsQueryClient(clientSecretCredential);
 
         try{
         Response<LogsQueryResult>? response=await client.QueryWorkspaceAsync(
@@ -47,27 +67,40 @@ public class AppInsightsClient
             timeRange: new QueryTimeRange(TimeSpan.FromHours(1))
         );
 
+
         if(response!=null)
         {
             foreach(var table in response.Value.AllTables){
                 if(table.Rows.Count>0){
+                    
                 foreach(var row in table.Rows){
                     
-                    values.Add($"{row["TimeGenerated"]}: {row["Message"]}");
+                    appInsightsResult.ResponseMessages.Add($"{row["TimeGenerated"]}: {row["Message"]}");
                 }
                 }
                 else{
-                    return "no information found";
+
+                    appInsightsResult.StatusCode=200;
+                    appInsightsResult.ResultMessage="Queries successfully executed, no information found for this topic";
+                    return appInsightsResult;
                 }
             }
-            return values;
+            appInsightsResult.StatusCode=200;
+            appInsightsResult.ResultMessage="Queries successfully executed";
+            return appInsightsResult;
         }
         else{
-            return "no response";
+
+            appInsightsResult.StatusCode=400;
+            appInsightsResult.ResultMessage="Queries successfully executed, no information found";
+            return appInsightsResult;
         }
         }
         catch(Exception ex){
-            return ex.Message;
+
+            appInsightsResult.StatusCode=500;
+            appInsightsResult.ResultMessage=ex.Message;
+            return appInsightsResult;
         }
 
         }

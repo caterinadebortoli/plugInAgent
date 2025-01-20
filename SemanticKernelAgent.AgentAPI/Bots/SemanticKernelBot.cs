@@ -38,7 +38,7 @@ namespace Microsoft.BotBuilderSamples
 
         private readonly AppInsightsClient _appInsightsClient;
 
-        private readonly Neo4jGraphClient _neo4jGraphClient;
+
        
 
         public SemanticKernelBot(
@@ -50,8 +50,7 @@ namespace Microsoft.BotBuilderSamples
             DocumentAnalysisClient documentAnalysisClient = null,
             BlobServiceClient blobServiceClient = null,
             GraphClient graphClient = null,
-            AppInsightsClient appInsightsClient=null,
-            Neo4jGraphClient neo4JGraphClient=null) :
+            AppInsightsClient appInsightsClient=null) :
             base(config, conversationState, userState, kernel, documentAnalysisClient, dialog)
         {
             _welcomeMessage = config.GetValue<string>("PROMPT_WELCOME_MESSAGE");
@@ -62,7 +61,6 @@ namespace Microsoft.BotBuilderSamples
             _documentAnalysisClient = documentAnalysisClient;
             _graphClient = graphClient;
             _appInsightsClient=appInsightsClient;
-            _neo4jGraphClient=neo4JGraphClient;
             _kernel = kernel;
 
         }
@@ -98,7 +96,7 @@ namespace Microsoft.BotBuilderSamples
                 {
                     MaxTokens = 128000,
                 };
-
+            
                 var planner = new FunctionCallingStepwisePlanner(plannerOptions);
                 string prompt = FormatConversationHistory(conversationData);
                 var result = await planner.ExecuteAsync(_kernel, prompt);
@@ -125,7 +123,6 @@ namespace Microsoft.BotBuilderSamples
             if (_documentAnalysisClient != null && !_kernel.Plugins.Select(x => x.Name).Contains("UploadPlugin")) _kernel.ImportPluginFromObject(new UploadPlugin(conversationData, turnContext, _kernel), "UploadPlugin");
             if (!_kernel.Plugins.Select(x => x.Name).Contains("DALLEPlugin")) _kernel.ImportPluginFromObject(new DALLEPlugin(conversationData, turnContext, _kernel), "DALLEPlugin");
             if (!_kernel.Plugins.Select(x=>x.Name).Contains("AppInsightsPlugin")) _kernel.ImportPluginFromObject(new AppInsightsPlugin(turnContext,_appInsightsClient), "AppInsightsPlugin");
-            if (!_kernel.Plugins.Select(x=>x.Name).Contains("Neo4jGrahPlugIn")) _kernel.ImportPluginFromObject(new Neo4jGraphPlugIn(turnContext,_neo4jGraphClient), "Neo4jGrahPlugIn");
             if (!_kernel.Plugins.Select(x => x.Name).Contains("SharePointPlugin")) _kernel.ImportPluginFromObject(new SharePointListPlugin(conversationData, turnContext, _graphClient), "SharePointPlugin");
             if (!_useStepwisePlanner && !_kernel.Plugins.Select(x => x.Name).Contains("HumanInterfacePlugin")) _kernel.ImportPluginFromObject(new HumanInterfacePlugin(conversationData, turnContext, _kernel), "HumanInterfacePlugin");
         }

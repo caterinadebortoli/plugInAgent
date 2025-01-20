@@ -26,6 +26,8 @@ using SemanticKernelAgent.AgentCore.Services;
 using OpenTelemetry.Logs;
 using OpenTelemetry.Metrics;
 using OpenTelemetry.Trace;
+using Models;
+using Services;
 
 namespace Microsoft.BotBuilderSamples
 {
@@ -44,10 +46,9 @@ namespace Microsoft.BotBuilderSamples
             
             services.AddApplicationInsightsTelemetry(aiOptions);
 
-
             DefaultAzureCredential azureCredentials;
             if (configuration.GetValue<string>("MicrosoftAppType") == "UserAssignedMSI")
-                azureCredentials = new DefaultAzureCredential(new DefaultAzureCredentialOptions() { ManagedIdentityClientId = configuration.GetValue<string>("MicrosoftAppId") });
+                azureCredentials = new DefaultAzureCredential();
             else
                 azureCredentials = new DefaultAzureCredential();
             services.AddHttpClient().AddControllers().AddNewtonsoftJson(options =>
@@ -82,14 +83,12 @@ namespace Microsoft.BotBuilderSamples
           
 
             // Add Graph Client Service Singleton
-
+            services.AddSingleton<DirectLineService>();
             services.AddSingleton<GraphClient>();
 
             // Add App Insights Client Service Singleton
             services.AddSingleton<AppInsightsClient>();
 
-            services.AddSingleton<Neo4jGraphClient>();
-            
             // Create the User state passing in the storage layer.
             var userState = new UserState(storage);
             services.AddSingleton(userState);
@@ -111,7 +110,7 @@ namespace Microsoft.BotBuilderSamples
             // services.AddSingleton<LoginDialog>();
             services.AddSingleton<LoginDialog>();
             services.AddTransient<IBot, SemanticKernelBot<LoginDialog>>();
-
+            services.AddSwaggerGen();
             services.AddSingleton<Kernel>(services => {
                 var kernel = Kernel.CreateBuilder()
                     .AddAzureOpenAIChatCompletion(
@@ -142,7 +141,11 @@ namespace Microsoft.BotBuilderSamples
             {
                 app.UseDeveloperExceptionPage();
             }
-
+            app.UseSwagger();
+            app.UseSwaggerUI(options=>{
+                options.SwaggerEndpoint("/swagger/v1/swagger.json", "v1");
+                options.RoutePrefix = string.Empty;
+            });
             app.UseDefaultFiles()
                 .UseStaticFiles()
                 .UseRouting()

@@ -8,8 +8,6 @@
 
   <ItemGroup>
     <PackageReference Include="Azure.Monitor.Query" Version="1.6.0" />
-    <PackageReference Include="Neo4j.Driver" Version="5.27.0" />
-    <PackageReference Include="Neo4j.KernelMemory.MemoryStorage" Version="0.1.0" />
     <ProjectReference Include="../SemanticKernelAgent.AgentTypes/SemanticKernelAgent.AgentTypes.csproj" />
     <PackageReference Include="Azure.Identity" Version="1.13.1" />
     <PackageReference Include="Azure.Security.KeyVault.Keys" Version="4.7.0" />
