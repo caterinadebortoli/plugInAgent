@@ -7,10 +7,11 @@ on:
 
 permissions:
   id-token: write
+  contents: read
 
 jobs:
   deploy:
-    runs-on: self-hosted
+    runs-on: windows-latest
 
     steps:
     # Step 1: Checkout the code from the repository
