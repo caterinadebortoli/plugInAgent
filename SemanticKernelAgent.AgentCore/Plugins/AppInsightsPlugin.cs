@@ -21,7 +21,7 @@ public class AppInsightsPlugin
 
     [KernelFunction, Description("Generate App Insights' query; This function is called when Traces, Exceptions or other App Insijghts related informations is asked.")]
     public async Task<AppInsightsResult> CreateQuery(
-        [Description("The name of the table to be retrieved, which can be AppTraces or AppExceptions")] string tableName,
+        [Description("The name of the table to be retrieved, which can be traces or exceptions")] string tableName,
         [Description("Top N Items to be retrieved, defaults to Null")] int? TopNItems,
         [Description("Whether the severity level is requested")] bool HasSeverityLevel,
         [Description("The severity level requested, defaults to Null.")] int? SeverityLevel

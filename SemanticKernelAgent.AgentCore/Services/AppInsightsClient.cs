@@ -6,39 +6,41 @@ using System;
 using Azure;
 using System.Drawing;
 using SemanticKernelAgent.AgentTypes.AppInsights;
+using Azure.Core;
+using Microsoft.Graph.Models;
+using Microsoft.Bot.Configuration;
+using System.Text;
+using System.Text.Json;
+using Newtonsoft.Json.Linq;
+using System.ClientModel.Primitives;
 namespace SemanticKernelAgent.AgentCore.Services;
 
 public class AppInsightsClient
 {
-    private readonly string _workspaceId;
-    private readonly string _tenantId;
-    private readonly string _clientId;
-    private readonly string _clientSecret;
+
+    private readonly string _apiKey;
 
 
 
     public AppInsightsClient(IConfiguration configuration)
     {
-        _workspaceId = configuration.GetValue<string>("WORKSPACE_ID");
-        _tenantId = configuration.GetValue<string>("MicrosoftAppTenantId");
-        _clientId = configuration.GetValue<string>("ClientAppId");
-        _clientSecret=configuration.GetValue<string>("ClientSecret");
-   
+  
+        _apiKey=configuration.GetValue<string>("ApiKey");
 
     }
     public async Task<string> CreateQuery(string tableName, int? TopNItems, bool HasSeverityLevel, int? SeverityLevel)
     {
         if(TopNItems==null && HasSeverityLevel==false){
-           return $"{tableName} | project TimeGenerated, Message"; 
+           return $"{tableName} | project timestamp, message"; 
         } 
         else if(TopNItems!=null && HasSeverityLevel==false){
-         return $"{tableName} | top {TopNItems} by TimeGenerated | project TimeGenerated, Message";
+         return $"{tableName} | top {TopNItems} by timestamp | project timestamp, message";
         }
         else if(TopNItems!=null && HasSeverityLevel==true){
-           return $"{tableName} | top {TopNItems} by SeverityLevel | project TimeGenerated, Message"; 
+           return $"{tableName} | top {TopNItems} by severityLevel | project timestamp, message"; 
         }
         else {
-            return $"{tableName} | where SeverityLevel == {SeverityLevel} | project TimeGenerated, Message";
+            return $"{tableName} | where severityLevel == {SeverityLevel} | project timestamp, message";
         }
     }
 
@@ -49,35 +51,45 @@ public class AppInsightsClient
         {
             AuthorityHost = AzureAuthorityHosts.AzurePublicCloud,
         };
-    
-        // https://learn.microsoft.com/dotnet/api/azure.identity.clientsecretcredential
-        var clientSecretCredential = new ClientSecretCredential(_tenantId, _clientId, _clientSecret,options);
 
-        //_graphClient = new GraphServiceClient(clientSecretCredential, scopes);
-        //ClientSecretCredential credential = new ClientSecretCredential(_tenantId,_clientId,_clientSecret);
-        
+
         AppInsightsResult appInsightsResult = new AppInsightsResult();
         appInsightsResult.ResponseMessages = new List<string>();
-        var client = new LogsQueryClient(clientSecretCredential);
-
-        try{
-        Response<LogsQueryResult>? response=await client.QueryWorkspaceAsync(
-            workspaceId: _workspaceId,
-            query: query,
-            timeRange: new QueryTimeRange(TimeSpan.FromHours(1))
-        );
 
 
-        if(response!=null)
+    
+         try{
+        
+            HttpClient client = new HttpClient();
+            client.DefaultRequestHeaders.Add("x-api-key",_apiKey);
+            
+        var requestBody = new
         {
-            foreach(var table in response.Value.AllTables){
-                if(table.Rows.Count>0){
-                    
-                foreach(var row in table.Rows){
-                    
-                    appInsightsResult.ResponseMessages.Add($"{row["TimeGenerated"]}: {row["Message"]}");
-                }
-                }
+            query = query
+        };
+
+        var jsonContent = JsonSerializer.Serialize(requestBody);
+        var content = new StringContent(jsonContent, Encoding.UTF8, "application/json");
+        
+            
+            var response= await client.PostAsync(requestUri:"https://api.applicationinsights.io/v1/apps/3569fc86-6318-4348-930d-1e6eb67002c9/query",content);
+            response.EnsureSuccessStatusCode();
+
+            var responseData = await response.Content.ReadAsStringAsync();
+            var json = JObject.Parse(responseData);
+
+            if (json != null)
+            {
+                foreach (var table in json["tables"])
+                {
+                    var rows = table["rows"];
+                    if (rows.Count() > 0)
+                    {
+                        foreach (var row in rows)
+                        {
+                            appInsightsResult.ResponseMessages.Add($"{row["TimeGenerated"]}: {row["Message"]}");
+                        }
+                    }
                 else{
 
                     appInsightsResult.StatusCode=200;
