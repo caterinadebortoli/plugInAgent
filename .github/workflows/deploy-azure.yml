@@ -21,10 +21,10 @@ jobs:
     - name: Azure CLI Login
       uses: azure/login@v2
       with:
-        client-id: ${{ secrets.AZURE_CLIENT_ID }}
+        auth-type: IDENTITY
         tenant-id: ${{ secrets.AZURE_TENANT_ID }}
         subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
-        
+        enable-AzPSSession: true
 
     # Step 3: Deploy the ARM template
     - name: Deploy ARM Template
