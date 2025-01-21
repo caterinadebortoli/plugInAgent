@@ -58,7 +58,7 @@ public class AppInsightsClient
 
 
     
-         try{
+        try{
         
             HttpClient client = new HttpClient();
             client.DefaultRequestHeaders.Add("x-api-key",_apiKey);
@@ -85,9 +85,10 @@ public class AppInsightsClient
                     var rows = table["rows"];
                     if (rows.Count() > 0)
                     {
-                        foreach (var row in rows)
-                        {
-                            appInsightsResult.ResponseMessages.Add($"{row["TimeGenerated"]}: {row["Message"]}");
+                        
+                        foreach (JToken row in rows)
+                        {   
+                            appInsightsResult.ResponseMessages.Add(Convert.ToString(row));
                         }
                     }
                 else{
