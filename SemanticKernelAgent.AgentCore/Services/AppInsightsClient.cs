@@ -47,14 +47,8 @@ public class AppInsightsClient
     public async Task<AppInsightsResult> ExecuteQuery(string query)
         {
         
-                var options = new ClientSecretCredentialOptions
-        {
-            AuthorityHost = AzureAuthorityHosts.AzurePublicCloud,
-        };
-
-
         AppInsightsResult appInsightsResult = new AppInsightsResult();
-        appInsightsResult.ResponseMessages = new List<string>();
+        appInsightsResult.ResponseMessages = new List<ResponseMessage>();
 
 
     
@@ -88,7 +82,9 @@ public class AppInsightsClient
                         
                         foreach (JToken row in rows)
                         {   
-                            appInsightsResult.ResponseMessages.Add(Convert.ToString(row));
+                            ResponseMessage responseMessage = new ResponseMessage(Convert.ToString(row[0]),Convert.ToString(row[1]));
+                    
+                            appInsightsResult.ResponseMessages.Add(responseMessage);
                         }
                     }
                 else{
