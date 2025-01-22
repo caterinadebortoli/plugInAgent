@@ -18,7 +18,7 @@ jobs:
       uses: actions/checkout@v3
 
     - name: Install Azure PowerShell module
-      run: Install-Module -Name Az -Force -AllowClobber
+      run: Install-Module -Name Az -Force -AllowClobber -Scope CurrentUser -Repository PSGallery -ErrorAction Stop
     - name: Login to Azure
       run: |
         $servicePrincipal = @{
@@ -37,8 +37,8 @@ jobs:
         inlineScript: |
           $Parameters = @{
             ResourcegroupName    = "rg-bot-deployment-test"
-            Templatefile         = "SemanticKernelAgent.AgentAP\ArmTemplates\final.json"
-            TemplateParameterfile = "SemanticKernelAgent.AgentAP\ArmTemplates\parameters.json"
+            Templatefile         = "SemanticKernelAgent.AgentAPI/ArmTemplates/final.json"
+            TemplateParameterfile = "SemanticKernelAgent.AgentAPI/ArmTemplates/parameters.json"
             Mode                 = 'Incremental'
           }
           $Result = Get-AzResourceGroupDeploymentWhatIfResult @Parameters
