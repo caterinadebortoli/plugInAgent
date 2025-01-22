@@ -36,7 +36,7 @@ jobs:
         # Specify the Az PowerShell script here.
         inlineScript: |
           $Parameters = @{
-            ResourcegroupName    = "ARMDeploymentTest"
+            ResourcegroupName    = "rg-bot-deployment-test"
             Templatefile         = ".\SemanticKernelAgent.AgentAP\ArmTemplates\final.json"
             TemplateParameterfile = ".\SemanticKernelAgent.AgentAP\ArmTemplates\parameters.json"
             Mode                 = 'Incremental'
