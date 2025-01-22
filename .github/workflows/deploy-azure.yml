@@ -32,7 +32,7 @@ jobs:
 
     - name: Set Azure Subscription
       run: |
-        Set-AzContext -Subscription "${{ secrets.AZURE_SUBSCRIPTION_ID }}"
+        Set-AzContext -Tenant "${{ secrets.AZURE_TENANT_ID }}" -Subscription "${{ secrets.AZURE_SUBSCRIPTION_ID }}"
 
     - name: Show resources
       uses: Azure/powershell@v1
