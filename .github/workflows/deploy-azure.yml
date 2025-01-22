@@ -1,4 +1,4 @@
-name: Azure ARM Deployment
+name: Deploy ARM Template
 
 on:
   push:
@@ -11,28 +11,43 @@ permissions:
 
 jobs:
   deploy:
-    runs-on: ubuntu-latest
+    runs-on: windows-latest
 
     steps:
     - name: Checkout Code
       uses: actions/checkout@v3
 
-    - name: Authenticate with Azure CLI
+    - name: Install Azure PowerShell module
+      run: Install-Module -Name Az -Force -AllowClobber -Scope CurrentUser -Repository PSGallery -ErrorAction Stop
+    - name: Login to Azure
       run: |
-        az login --allow-no-subscriptions --service-principal \
-          --username "${{ secrets.AZURE_CLIENT_ID }}" \
-          --password "${{ secrets.AZURE_CLIENT_SECRET }}" \
-          --tenant "${{ secrets.AZURE_TENANT_ID }}"
+        $servicePrincipal = @{
+        clientId       = "${{ secrets.AZURE_CLIENT_ID }}"
+        clientSecret   = "${{ secrets.AZURE_CLIENT_SECRET }}"
+        tenantId       = "${{ secrets.AZURE_TENANT_ID }}"
+        }
+        $credential = New-Object -TypeName PSCredential -ArgumentList $servicePrincipal.clientId, $(ConvertTo-SecureString -String $servicePrincipal.clientSecret -AsPlainText -Force)
 
-    - name: Set Azure Account
-      run: |
-        az cloud set --name AzureCloud
-        az account set --subscription "${{ secrets.AZURE_SUBSCRIPTION_ID }}"
+        Connect-AzAccount -ServicePrincipal -Credential $credential -Tenant $servicePrincipal.tenantId
 
-    - name: Deploy ARM Template
+    - name: Set Azure Subscription
       run: |
-        az deployment group create \
-          --resource-group rg-bot-deployment-test \
-          --template-file SemanticKernelAgent.AgentAP/ArmTemplates/final.json \
-          --parameters SemanticKernelAgent.AgentAP/ArmTemplates/parameters.json \
-          --mode Incremental
+        Set-AzContext -Tenant "${{ secrets.AZURE_TENANT_ID }}" -Subscription "${{ secrets.AZURE_SUBSCRIPTION_ID }}"
+
+    - name: Show resources
+      uses: Azure/powershell@v1
+      with:
+        # Specify the Az PowerShell script here.
+        inlineScript: |
+          $Parameters = @{
+            ResourcegroupName    = "rg-bot-deployment-test"
+            Templatefile         = "SemanticKernelAgent.AgentAPI/ArmTemplates/final.json"
+            TemplateParameterfile = "SemanticKernelAgent.AgentAPI/ArmTemplates/parameters.json"
+            Mode                 = 'Incremental'
+          }
+          $Result = Get-AzResourceGroupDeploymentWhatIfResult @Parameters
+          $Result
+        # Azure PS version to be used to execute the script, example: 1.8.0, 2.8.0, 3.4.0. To use the latest version, specify "latest".
+        azPSVersion: latest
+
+
