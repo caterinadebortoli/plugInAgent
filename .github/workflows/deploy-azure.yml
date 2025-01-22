@@ -30,12 +30,20 @@ jobs:
 
         Connect-AzAccount -ServicePrincipal -Credential $credential -Tenant $servicePrincipal.tenantId
 
-    - name: Deploy ARM Template
-      uses: azure/arm-deploy@v1
+    - name: Show resources
+      uses: Azure/powershell@v1
       with:
-        scope: resourceGroup
-        subscriptionId: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
-        resourceGroupName: rg-bot-deployment-test
-        template: .SemanticKernelAgent.AgentAPI\ArmTemplates\final.json
-        parameters: .SemanticKernelAgent.AgentAPI\ArmTemplates\parameters.json
+        # Specify the Az PowerShell script here.
+        inlineScript: |
+          $Parameters = @{
+            ResourcegroupName    = "ARMDeploymentTest"
+            Templatefile         = ".\SemanticKernelAgent.AgentAP\ArmTemplates\final.json"
+            TemplateParameterfile = ".\SemanticKernelAgent.AgentAP\ArmTemplates\parameters.json"
+            Mode                 = 'Incremental'
+          }
+          $Result = Get-AzResourceGroupDeploymentWhatIfResult @Parameters
+          $Result
+        # Azure PS version to be used to execute the script, example: 1.8.0, 2.8.0, 3.4.0. To use the latest version, specify "latest".
+        azPSVersion: latest
+
 
